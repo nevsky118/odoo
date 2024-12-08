@@ -1,0 +1,84 @@
+---
+---
+<style>
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+</style>
+<form id="feedback-form" enctype="multipart/form-data" novalidate class="max-w-lg mx-auto p-6 bg-white dark:bg-gray-800 shadow-md rounded">
+  <div class="mb-4">
+    <label for="category" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Тема сообщения</label>
+    <select id="category" name="category" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-800 leading-tight focus:outline-none focus:shadow-outline">
+      <option value="">-- Выберите тему --</option>
+      <option value="general">Общий вопрос</option>
+      <option value="technical">Техническая поддержка</option>
+      <option value="billing">Биллинг и оплата</option>
+      <option value="course">Курс и обучение</option>
+      <option value="other">Другое</option>
+    </select>
+    <span class="error text-red-500 text-sm" id="category-error"></span>
+  </div>
+
+
+  <div class="mb-4">
+    <label for="message" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Сообщение</label>
+    <textarea id="message" name="message" rows="5" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-800 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+    <span class="error text-red-500 text-sm" id="message-error"></span>
+  </div>
+
+  <div class="mb-4">
+    <label for="file" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Прикрепить файл</label>
+    <input type="file" id="file" name="file" class="block w-full text-sm text-gray-500 dark:text-gray-300
+      file:mr-4 file:py-2 file:px-4
+      file:rounded file:border-0
+      file:text-sm file:font-semibold
+      file:bg-blue-50 dark:file:bg-blue-700 file:text-blue-700 dark:file:text-blue-200
+      hover:file:bg-blue-100 dark:hover:file:bg-blue-600
+    " />
+    <span class="error text-red-500 text-sm" id="file-error"></span>
+  </div>
+
+  <div class="flex justify-end">
+    <button type="submit" class="flex items-center bg-blue-500 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+      Отправить
+    </button>
+  </div>
+</form>
+
+<script type="module" src="/scripts/FeedbackFormScript.js"></script>
+<!-- Отправка формы + серверная проверка на отправку -->
+<script type="module">
+  document.getElementById('feedback-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+    const data = {};
+
+    formData.forEach((value, key) => {
+      data[key] = value;
+    });
+
+    try {
+      const response = await fetch('http://localhost:8000/submit-form', { // URL Python API
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(result.message);
+        form.reset();
+      } else {
+        alert(result.detail || 'Произошла ошибка при отправке формы.');
+      }
+    } catch (error) {
+      console.error('Ошибка при отправке формы:', error);
+      alert('Произошла ошибка при отправке формы.');
+    }
+  });
+</script>
