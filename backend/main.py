@@ -1,9 +1,6 @@
-from uuid import uuid4
-
 import uvicorn
 import psycopg
 import os
-import uuid
 from datetime import datetime
 from fastapi import FastAPI, APIRouter, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,15 +18,15 @@ FILE_DIRECTORY = "usersfiles"
 def get_db_connection():
     global db_connection
     if db_connection is None:
-        db_connection = psycopg.connect("dbname=postgres user=postgres password=yourpassword host=localhost port=5432")
+        db_connection = psycopg.connect("dbname=feedback user=postgres password=postgres host=localhost port=5432")
     return db_connection
 
-# Логика подключения и закрытия соединения через lifespan
+# Логика подключения к базе данных и закрытия соединения через lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global db_connection
     # Подключение к базе данных при запуске приложения
-    db_connection = psycopg.connect("dbname=postgres user=postgres password=postgres host=localhost port=5432")
+    db_connection = get_db_connection()
     print("Database connection established.")
 
     # Ждем завершения работы приложения
@@ -71,8 +68,10 @@ async def submit_and_upload_feedback(
     file_path = None
     if file:
         # Создаем уникальное имя файла
-        filename = f"{uuid.uuid4()}-{file.filename.replace(' ', '-')}"
-        file_path = os.path.join(FILE_DIRECTORY, filename)
+        timestamp = str(datetime.now()).split(".")[0]
+        filename = f"{str(uid)}-{timestamp}.{str(file.filename).split(".")[-1]}"
+        filename = filename.replace(" ", "-")
+        file_path = str(os.path.join(FILE_DIRECTORY, filename))
 
         # Сохраняем файл на диск
         os.makedirs(FILE_DIRECTORY, exist_ok=True)
@@ -81,67 +80,20 @@ async def submit_and_upload_feedback(
             f.write(content)
 
     # Сохраняем фидбек и путь к файлу в БД (если файл есть)
-    with get_db_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO user_feedback (timestamp, uid, feedback_type, feedback_text, file_path) VALUES ('now', %s, %s, %s, %s)",
-                (uid, feedback_type, feedback_text, file_path)
-            )
-            conn.commit()
+    # with get_db_connection() as conn:
+    with get_db_connection().cursor() as cur:
+        cur.execute(
+            "INSERT INTO user_feedback (timestamp, uid, feedback_type, feedback_text, file_path) VALUES ('now', %s, %s, %s, %s)",
+            (uid, feedback_type, feedback_text, file_path)
+        )
+        get_db_connection().commit()
 
     return {"status": "Your feedback has been submitted successfully."}
-
-@router.get("/feedback/download/{filename}")
-async def download_file(filename: str):
-    # Проверка, существует ли файл в директории
-    filepath = os.path.join(FILE_DIRECTORY, filename)
-    if os.path.exists(filepath):
-        return FileResponse(filepath)
-    else:
-        raise HTTPException(status_code=404, detail="File not found")
 
 
 @router.get("/feedback")
 async def feedback_page():
     return {"Message": "You are on the feedback page."}
-
-
-@router.post("/feedback/submit")
-async def submit_feedback(feedback_type: str, feedback_text: str):
-    uid = 1234
-    newinstance = [uid, feedback_type, feedback_text]
-
-    # storing in a postgresql database "feedback", table "user_feedback"
-
-    # Connect to an existing database
-    with psycopg.connect("dbname=feedback user=gnuser") as conn:
-        # Open a cursor to perform database operations
-        with conn.cursor() as cur:
-            # Pass data to fill a query placeholders and let Psycopg perform
-            # the correct conversion (no SQL injections!)
-            cur.execute(
-                "INSERT INTO user_feedback (timestamp, uid, feedback_type, feedback_text) VALUES ('now', %s, %s, %s)",
-                (uid, feedback_type, feedback_text))
-
-            # Make the changes to the database persistent
-            conn.commit()
-
-    return {"status": "Your message has been collected successfully."}
-
-
-@router.post("/feedback/upload")
-async def file_upload(file: UploadFile):
-    timestamp = str(datetime.now()).split(".")[0]
-    content = await file.read()
-    uid = 1234
-    filename = str(uid) + "-" + str(timestamp) + "." + str(file.filename).split(".")[-1]
-    filename = filename.replace(" ", "-")
-
-    f = open(f"usersfiles/{filename}", "xb")
-    f.write(content)
-    f.close()
-
-    return {"status": f"file {filename} is written"}
 
 
 app.include_router(router)
