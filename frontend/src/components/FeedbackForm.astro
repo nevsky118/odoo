@@ -1,0 +1,127 @@
+---
+---
+<form id="feedback-form" enctype="multipart/form-data" novalidate class="max-w-lg mx-auto p-6 bg-white dark:bg-gray-800 shadow-md rounded">
+  <div class="mb-4">
+    <label for="category" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Тема сообщения</label>
+    <select id="category" name="category" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-800 leading-tight focus:outline-none focus:shadow-outline">
+      <option value="general">Общий вопрос</option>
+      <option value="technical">Сообщение об ошибке</option>
+      <option value="course">Курс и обучение</option>
+      <option value="other">Другое</option>
+    </select>
+    <span class="error text-red-500 text-sm" id="category-error"></span>
+  </div>
+
+
+  <div class="mb-4">
+    <label for="message" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Сообщение</label>
+    <textarea id="message" name="message" rows="5" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-800 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+    <span class="error text-red-500 text-sm" id="message-error"></span>
+  </div>
+
+  <div class="mb-4">
+    <label for="file" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Прикрепить файл</label>
+    <input type="file" id="file" name="file" class="block w-full text-sm text-gray-500 dark:text-gray-300
+      file:mr-4 file:py-2 file:px-4
+      file:rounded file:border-0
+      file:text-sm file:font-semibold
+      file:bg-blue-50 dark:file:bg-blue-700 file:text-blue-700 dark:file:text-blue-200
+      hover:file:bg-blue-100 dark:hover:file:bg-blue-600
+    " />
+    <span class="error text-red-500 text-sm" id="file-error"></span>
+  </div>
+
+  <div class="flex justify-end">
+    <button type="submit" class="flex items-center bg-blue-500 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+      Отправить
+    </button>
+  </div>
+</form>
+
+<script>
+  // @ts-nocheck
+  import { toast } from 'sonner'
+  import { MAX_MESSAGE_LENGTH, MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from '../constants';
+
+  const submitFeedback = async (formData: FormData) => {
+    const response = await fetch('/api/feedback', {
+      method: 'POST',
+      body: formData,
+    });
+    const result = await response.json();
+    if (response.ok) {
+      return result;
+    } else {
+      throw new Error(result.detail || 'Произошла ошибка при отправке формы.');
+    }
+  };
+
+  const onSubmit = async (data: { [key: string]: FormDataEntryValue }) => {
+    const formData = new FormData();
+    formData.append('category', data.category);
+    formData.append('message', data.message);
+    if (data.file && data.file) {
+      formData.append('file', data.file);
+    }
+
+    const promise = () => submitFeedback(formData);
+
+    toast.promise(promise, {
+      loading: 'Отправка...',
+      success: () => 'Форма успешно отправлена',
+      error: () => 'Произошла ошибка при отправке формы.',
+    })
+  };
+
+
+  document.getElementById('feedback-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const data: { [key: string]: FormDataEntryValue } = {};
+
+    let isValid = true;
+
+    formData.forEach((value, key) => {
+        if (value instanceof File) {
+            if (value.size === 0) {
+                return;
+            }
+        }
+        data[key] = value;
+    });
+
+    const category = data['category'] as string;
+    const message = data['message'] as string;
+    const file = data['file'] as File | undefined;
+    
+    if (!category) {
+        isValid = false;
+        document.getElementById('category-error').textContent = 'Пожалуйста, выберите тему сообщения.';
+    } else {
+        document.getElementById('category-error').textContent = '';
+    }
+
+    if (!message) {
+        isValid = false;
+        document.getElementById('message-error').textContent = 'Пожалуйста, введите сообщение.';
+    } else if (message.length > MAX_MESSAGE_LENGTH) {
+        isValid = false;
+        document.getElementById('message-error').textContent = `Сообщение не должно превышать ${MAX_MESSAGE_LENGTH} символов`;
+    } else {
+        document.getElementById('message-error').textContent = '';
+    }
+
+    if (file && (file.size > MAX_FILE_SIZE || !ALLOWED_MIME_TYPES.includes(file.type))) {
+        isValid = false;
+        document.getElementById('file-error').textContent = 'Файл не должен превышать 5 МБ и должен быть типа JPEG, PNG, PDF';
+        return;
+    }
+
+    if (!isValid) {
+        return;
+    }
+    onSubmit(data);
+});
+</script>
