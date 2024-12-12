@@ -26,12 +26,16 @@ npm install
 npm run dev
 ```
 
+Фронтенд доступен по адресу [127.0.0.1:4321](http://127.0.0.1:4321)
+
 ### Бэкенд
 ```bash
 cd backend
 pip install -r requirements.txt
 python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ```
+
+Бэкенд доступен по адресу [127.0.0.1:8000](http://127.0.0.1:8000)
 
 ### Поднятие базы данных локально
 
@@ -64,3 +68,11 @@ POSTGRES_DATABASE=postgres
 cd odoo
 docker-compose up -d
 ```
+
+Приложение доступно по адресу [http://localhost/](http://127.0.0.1/)
+
+- Форма на Astro [http://localhost/astro](http://127.0.0.1/astro)
+- Форма на React [http://localhost/react](http://127.0.0.1/react)
+- API [http://localhost/api/docs](http://127.0.0.1/api/docs)
+
+
