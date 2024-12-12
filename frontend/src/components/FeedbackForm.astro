@@ -4,10 +4,8 @@
   <div class="mb-4">
     <label for="category" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Тема сообщения</label>
     <select id="category" name="category" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-800 leading-tight focus:outline-none focus:shadow-outline">
-      <option value="">-- Выберите тему --</option>
       <option value="general">Общий вопрос</option>
-      <option value="technical">Техническая поддержка</option>
-      <option value="billing">Биллинг и оплата</option>
+      <option value="technical">Сообщение об ошибке</option>
       <option value="course">Курс и обучение</option>
       <option value="other">Другое</option>
     </select>
@@ -40,40 +38,89 @@
   </div>
 </form>
 
-<script type="module" src="/scripts/FeedbackFormScript.js"></script>
-<!-- Отправка формы + серверная проверка на отправку -->
-<script type="module">
+<script>
+  import { toast } from 'sonner'
+  import { MAX_MESSAGE_LENGTH, MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from '../constants';
+
+  const submitFeedback = async (formData) => {
+    const response = await fetch('/api/feedback', {
+      method: 'POST',
+      body: formData,
+    });
+    const result = await response.json();
+    if (response.ok) {
+      return result;
+    } else {
+      throw new Error(result.detail || 'Произошла ошибка при отправке формы.');
+    }
+  };
+
+  const onSubmit = async (data) => {
+    const formData = new FormData();
+    formData.append('category', data.category);
+    formData.append('message', data.message);
+    if (data.file && data.file) {
+      formData.append('file', data.file);
+    }
+
+    const promise = () => submitFeedback(formData);
+
+    toast.promise(promise, {
+      loading: 'Отправка...',
+      success: () => 'Форма успешно отправлена',
+      error: () => 'Произошла ошибка при отправке формы.',
+    })
+  };
+
+
   document.getElementById('feedback-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const form = e.target;
+    const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-    const data = {};
+
+    const data: { [key: string]: FormDataEntryValue } = {};
+
+    let isValid = true;
 
     formData.forEach((value, key) => {
-      data[key] = value;
+        if (value instanceof File) {
+            if (value.size === 0) {
+                return;
+            }
+        }
+        data[key] = value;
     });
 
-    try {
-      const response = await fetch('http://localhost:8000/submit-form', { // URL Python API
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert(result.message);
-        form.reset();
-      } else {
-        alert(result.detail || 'Произошла ошибка при отправке формы.');
-      }
-    } catch (error) {
-      console.error('Ошибка при отправке формы:', error);
-      alert('Произошла ошибка при отправке формы.');
+    const category = data['category'] as string;
+    const message = data['message'] as string;
+    const file = data['file'] as File | undefined;
+    
+    if (!category) {
+        isValid = false;
+        document.getElementById('category-error').textContent = 'Пожалуйста, выберите тему сообщения.';
+    } else {
+        document.getElementById('category-error').textContent = '';
     }
-  });
+
+    if (!message) {
+        isValid = false;
+        document.getElementById('message-error').textContent = 'Пожалуйста, введите сообщение.';
+    } else if (message.length > MAX_MESSAGE_LENGTH) {
+        isValid = false;
+        document.getElementById('message-error').textContent = `Сообщение не должно превышать ${MAX_MESSAGE_LENGTH} символов`;
+    } else {
+        document.getElementById('message-error').textContent = '';
+    }
+
+    if (file && (file.size > MAX_FILE_SIZE || !ALLOWED_MIME_TYPES.includes(file.type))) {
+        isValid = false;
+        document.getElementById('file-error').textContent = 'Файл не должен превышать 5 МБ и должен быть типа JPEG, PNG, PDF';
+        return;
+    }
+
+    if (!isValid) {
+        return;
+    }
+    onSubmit(data);
+});
 </script>

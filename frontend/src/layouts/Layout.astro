@@ -1,3 +1,8 @@
+---
+import { Toaster } from 'sonner'
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+---
 <!DOCTYPE html>
 <html lang="ru">
   <head>
@@ -7,34 +12,11 @@
     <link rel="stylesheet" />
   </head>
   <body class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 min-h-screen flex flex-col">
-    <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow">
-      <div class="max-w-7xl mx-left px-2 sm:px-4 lg:px-6">
-        <div class="flex justify-between h-16">
-          <!-- Название -->
-          <div class="flex-shrink-0 flex items-center">
-            <h1 class="text-xl font-bold text-indigo-600 dark:text-indigo-400">Обучающая Платформа</h1>
-          </div>
-          </div>
-        </div>
-      </div>
-      </div>
-    </header>
-
-    <!-- Main Content -->
+    <Header />
     <main class="flex-grow p-6">
       <slot />
     </main>
-
-    <!-- Footer -->
-    <footer class="bg-white dark:bg-gray-800 shadow">
-      <div class="max-w-7xl mx-left py-4 px-2 sm:px-4 lg:px-6">
-        <div class="flex flex-col md:flex-row justify-between items-center">
-          <!-- Копирайт -->
-          <p class="text-gray-600 dark:text-gray-300 text-sm">&copy; 2024 Обучающая Платформа. Все права защищены.</p>
-          </div>
-        </div>
-      </div>
-    </footer>
+    <Footer />
+    <Toaster richColors client:load />
   </body>
 </html>

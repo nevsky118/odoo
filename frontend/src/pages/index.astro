@@ -1,7 +1,11 @@
 ---
 import Layout from '@layouts/Layout.astro';
-import FeedbackForm from '@components/FeedbackForm.astro'
 ---
+
 <Layout>
-  <FeedbackForm />
+  <div class="flex justify-center space-x-4 mt-8">
+    <a href="/astro" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">Форма на Astro</a>
+    <a href="/react" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">Форма на React</a>
+    <a href="/api/docs" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">API</a>
+  </div>
 </Layout>
