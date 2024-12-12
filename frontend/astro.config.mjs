@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 
 const env = process.env.NODE_ENV || 'development';
-const envFile = env === 'production' ? '../.env.production' : '../.env.development';
+const envFile = env === 'production' ? '../.env' : '../.env.development';
 dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), envFile) });
 
 console.log('PUBLIC_API:', process.env.PUBLIC_API);
