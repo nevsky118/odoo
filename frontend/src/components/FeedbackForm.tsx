@@ -14,6 +14,12 @@ const FeedbackForm: React.FC = () => {
     file: "",
   });
 
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const formDataDiv = useRef<HTMLDivElement | null>(null);
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -33,10 +39,6 @@ const FeedbackForm: React.FC = () => {
       file,
     });
   };
-
-  const formDataDiv = useRef<HTMLDivElement | null>(null);
-
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const validateForm = (formData: {
     category: string;
@@ -83,26 +85,38 @@ const FeedbackForm: React.FC = () => {
   };
 
   const mockApiCall = (onSuccess: () => void, onError?: () => void) => {
+    if (isSubmitting) {
+      return;
+    }
+    setIsSubmitting(true);
     setTimeout(() => {
       onSuccess();
+      setIsSubmitting(false);
       if (onError) {
         onError();
       }
-    }, 2000);
+    }, 3000);
   };
 
-  const submitForm = async (data: FormData, form: HTMLFormElement) => {
+  const submitForm = async (
+    dataAPI: Object,
+    form: HTMLFormElement,
+    API: string
+  ) => {
+    setIsSubmitting(true);
     try {
-      const response = await fetch("http://localhost:8000/submit-form", {
+      const response = await fetch(API, {
         method: "POST",
-        body: data,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataAPI),
       });
 
       const result = await response.json();
 
       if (response.ok) {
         alert(result.message);
-        toggleLoader();
         setIsSubmitted(true);
         displayFormData(formData, formDataDiv);
         setFormData({ category: "", message: "", file: null });
@@ -115,6 +129,7 @@ const FeedbackForm: React.FC = () => {
       alert("Произошла ошибка при отправке формы.");
     } finally {
       toggleLoader();
+      setIsSubmitting(false);
     }
   };
 
@@ -133,22 +148,25 @@ const FeedbackForm: React.FC = () => {
 
     const data = new FormData();
     const form = e.target as HTMLFormElement;
-
     data.append("category", formData.category);
     data.append("message", formData.message);
     if (formData.file) {
       data.append("file", formData.file);
     }
 
-    mockApiCall(() => {
-      toggleLoader();
-      setIsSubmitted(true);
-      displayFormData(formData, formDataDiv);
-      setFormData({ category: "", message: "", file: null });
-      form.reset();
-    });
+    const dataAPI = Object.fromEntries(data);
+    const API =
+      "https://675c30bdfe09df667f62f555.mockapi.io/api/form-summit/forms";
 
-    // submitForm(data, form);
+    submitForm(dataAPI, form, API);
+
+    // mockApiCall(() => {
+    //   toggleLoader();
+    //   setIsSubmitted(true);
+    //   displayFormData(formData, formDataDiv);
+    //   setFormData({ category: "", message: "", file: null });
+    //   form.reset();
+    // });
   };
 
   return (
@@ -232,7 +250,10 @@ const FeedbackForm: React.FC = () => {
       <div className="flex justify-end">
         <button
           type="submit"
-          className="flex items-center bg-blue-500 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          className={`flex items-center bg-blue-500 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          disabled={isSubmitting}
         >
           Отправить
         </button>
