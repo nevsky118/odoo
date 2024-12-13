@@ -1,7 +1,7 @@
 ---
-import Layout from '../components/Layout.astro';
-import FeedbackForm from '../components/FeedbackForm.astro'
+import Layout from '../components/Layout.tsx';
+import FeedbackForm from '../components/FeedbackForm.tsx'
 ---
-<Layout>
-  <FeedbackForm />
+<Layout client:load>
+  <FeedbackForm client:load/>
 </Layout>
