@@ -57,7 +57,7 @@ docker run --name db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 
 
 Создайте файл .env с переменными окружения в корне приложения для деплоя в прод
 ```
-POSTGRES_HOST=localhost
+POSTGRES_HOST=db
 POSTGRES_PORT=5432
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
