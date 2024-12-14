@@ -160,12 +160,14 @@ async def submit_and_upload_feedback(
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
+            cur.execute("BEGIN;")
             cur.execute("""
             INSERT INTO feedback (category, message, file_path)
             VALUES (%s, %s, %s)
             """, (category, message, file_path))
             conn.commit()
     except Exception as e:
+        conn.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при сохранении данных в базу: {str(e)}"
