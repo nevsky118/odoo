@@ -1,11 +1,15 @@
 import React, { useState, useRef } from "react";
 import "../styles.css";
 import "../mockCallAPI.css";
+
+type FormValues = { category: string; message: string; file: File | null }
+
+
 const FeedbackForm: React.FC = () => {
-  const [formData, setFormData] = useState({
+  const [formValues, setFormValues] = useState<FormValues>({
     category: "",
     message: "",
-    file: null as File | null,
+    file: null,
   });
 
   const [errors, setErrors] = useState({
@@ -26,25 +30,21 @@ const FeedbackForm: React.FC = () => {
     >
   ) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormValues({
+      ...formValues,
       [name]: value,
     });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files ? e.target.files[0] : null;
-    setFormData({
-      ...formData,
+    setFormValues({
+      ...formValues,
       file,
     });
   };
 
-  const validateForm = (formData: {
-    category: string;
-    message: string;
-    file: File | null;
-  }) => {
+  const validateForm = (formData: FormValues) => {
     let formErrors = { category: "", message: "", file: "" };
 
     if (!formData.file) {
@@ -55,7 +55,7 @@ const FeedbackForm: React.FC = () => {
   };
 
   const displayFormData = (
-    formData: { category: string; message: string; file: File | null },
+    formData: FormValues,
     formDataDiv: React.RefObject<HTMLDivElement | null>
   ) => {
     if (formDataDiv.current) {
@@ -84,33 +84,15 @@ const FeedbackForm: React.FC = () => {
     }
   };
 
-  const mockApiCall = (onSuccess: () => void, onError?: () => void) => {
-    if (isSubmitting) {
-      return;
-    }
-    setIsSubmitting(true);
-    setTimeout(() => {
-      onSuccess();
-      setIsSubmitting(false);
-      if (onError) {
-        onError();
-      }
-    }, 3000);
-  };
-
   const submitForm = async (
-    dataAPI: Object,
-    form: HTMLFormElement,
-    API: string
+    formData: FormData,
+    formElement: HTMLFormElement,
   ) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(API, {
+      const response = await fetch("http://158.160.155.135/api/feedback", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(dataAPI),
+        body: formData,
       });
 
       const result = await response.json();
@@ -118,9 +100,9 @@ const FeedbackForm: React.FC = () => {
       if (response.ok) {
         alert(result.message);
         setIsSubmitted(true);
-        displayFormData(formData, formDataDiv);
-        setFormData({ category: "", message: "", file: null });
-        form.reset();
+        displayFormData(formValues, formDataDiv);
+        setFormValues({ category: "", message: "", file: null });
+        formElement.reset();
       } else {
         alert(result.detail || "Произошла ошибка при отправке формы.");
       }
@@ -133,10 +115,10 @@ const FeedbackForm: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-    let formErrors = validateForm(formData);
+    let formErrors = validateForm(formValues);
     setErrors(formErrors);
 
     if (formErrors.file) {
@@ -146,27 +128,15 @@ const FeedbackForm: React.FC = () => {
     setIsSubmitted(false);
     toggleLoader();
 
-    const data = new FormData();
-    const form = e.target as HTMLFormElement;
-    data.append("category", formData.category);
-    data.append("message", formData.message);
-    if (formData.file) {
-      data.append("file", formData.file);
+    const formData = new FormData();
+    const formElement = event.target as HTMLFormElement;
+    formData.append("category", formValues.category);
+    formData.append("message", formValues.message);
+    if (formValues.file) {
+      formData.append("file", formValues.file);
     }
 
-    const dataAPI = Object.fromEntries(data);
-    const API =
-      "https://675c30bdfe09df667f62f555.mockapi.io/api/form-summit/forms";
-
-    submitForm(dataAPI, form, API);
-
-    // mockApiCall(() => {
-    //   toggleLoader();
-    //   setIsSubmitted(true);
-    //   displayFormData(formData, formDataDiv);
-    //   setFormData({ category: "", message: "", file: null });
-    //   form.reset();
-    // });
+    submitForm(formData, formElement);
   };
 
   return (
@@ -186,7 +156,7 @@ const FeedbackForm: React.FC = () => {
           id="category"
           name="category"
           required
-          value={formData.category}
+          value={formValues.category}
           onChange={handleChange}
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-800 leading-tight focus:outline-none focus:shadow-outline"
         >
@@ -214,7 +184,7 @@ const FeedbackForm: React.FC = () => {
           name="message"
           rows={5}
           required
-          value={formData.message}
+          value={formValues.message}
           onChange={handleChange}
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-800 leading-tight focus:outline-none focus:shadow-outline"
         ></textarea>
